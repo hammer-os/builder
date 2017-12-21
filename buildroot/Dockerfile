@@ -1,10 +1,12 @@
 FROM debian:stretch-slim
 
-ENV BUILDROOT_STABLE_VERSION=2017.11
-ENV BUILDROOT_STABLE_PACKAGE=buildroot-${BUILDROOT_STABLE_VERSION}.tar.bz2
-  
-#ENV BUILDROOT_LTS_VERSION=2017.02.8
-#ENV BUILDROOT_LTS_PACKAGE=buildroot-${BUILDROOT_LTS_VERSION}.tar.bz2
+ARG BUILDROOT_STABLE_VERSION=2017.11
+ARG BUILDROOT_STABLE_PACKAGE=buildroot-${BUILDROOT_STABLE_VERSION}.tar.bz2
+
+#ARG BUILDROOT_LTS_VERSION=2017.02.8
+#ARG BUILDROOT_LTS_PACKAGE=buildroot-${BUILDROOT_LTS_VERSION}.tar.bz2
+
+ARG HAMMER_ARCH
 
 RUN apt-get update && apt-get install -y --no-install-suggests \
 		build-essential \
@@ -29,7 +31,7 @@ RUN set -ex; \
 	curl -fL -o buildroot.tar.bz2.sign "https://buildroot.net/downloads/$tarball.sign"; \
 	curl -fL -o buildroot.tar.bz2 "https://buildroot.net/downloads/$tarball"; \
 	gpg --batch --decrypt --output buildroot.tar.bz2.txt buildroot.tar.bz2.sign; \
-	awk '$1 == "SHA1:" && $2 ~ /^[0-9a-f]+$/ && $3 == "'"$tarball"'" { print $2, "*buildroot.tar.bz2" }' \
+	awk '$1 == "SHA1:" && $2 ~ /^[0-9a-f]+$/ && $3 == "'"$tarball"'" {print $2, "*buildroot.tar.bz2"}' \
 		buildroot.tar.bz2.txt > buildroot.tar.bz2.sha1; \
 	test -s buildroot.tar.bz2.sha1; \
 	sha1sum -c buildroot.tar.bz2.sha1; \
@@ -37,9 +39,14 @@ RUN set -ex; \
 	tar -xf buildroot.tar.bz2 -C /usr/src/buildroot --strip-components 1; \
 	rm buildroot.tar.bz2*
 
-COPY buildroot.config /usr/src/buildroot/.config
+RUN mkdir -p /usr/src/buildroot/board/hammer-os/${HAMMER_ARCH}
+
+COPY buildroot-${HAMMER_ARCH}.config /usr/src/buildroot/.config
 COPY busybox.config /usr/src/buildroot/package/busybox/custom.config
+COPY kernel-${HAMMER_ARCH}.config /usr/src/buildroot/board/hammer-os/${HAMMER_ARCH}/.config
 
 WORKDIR /usr/src/buildroot
 
 RUN make source
+
+RUN make toolchain
