@@ -1,3 +1,5 @@
+# Deprecated - DO NOT USE!
+
 
 > **WARNING:** This software is new, experimental, and under heavy
 > development. The documentation is lacking, if any. There are almost
